@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
   // physical systems constants
   // feder constant
 
-    double x = 0;
-    double v = 0;
+    double x = 10;
+    double v = 20;
     Data TempData;
     Point value;
     value.location = x;
