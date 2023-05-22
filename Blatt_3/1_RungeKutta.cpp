@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     TempData.Loc_Speed = value;
     TempData.time = TempData.time + interval;
     simulation_result.push_back(TempData);
-    std::cout << TempData.time << " " << TempData.Loc_Speed.location<<  TempData.Loc_Speed.speed <<"\n";
+    std::cout << TempData.time << " " << TempData.Loc_Speed.location<< " " <<  TempData.Loc_Speed.speed <<"\n";
   }
 
   return 0;
