@@ -76,13 +76,14 @@ int main(int argc, char *argv[]) {
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
 
+  //std::cout << "Time" << " | " << "|" << "Location" << " | "<<"Speed" <<"\n";
   for (int i = 0; i < iterations; i++) {
     runge_kutta(&value, &interval);
     Data TempData;
     TempData.Loc_Speed = value;
     TempData.time = TempData.time + interval;
     simulation_result.push_back(TempData);
-    std::cout << i*interval << " " << x <<"\n";
+    std::cout << TempData.time << " " << TempData.Loc_Speed.location<<  TempData.Loc_Speed.speed <<"\n";
   }
 
   return 0;
