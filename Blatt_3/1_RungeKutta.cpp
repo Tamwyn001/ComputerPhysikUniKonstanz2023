@@ -4,14 +4,16 @@
 const double k = 1.0;
 const double m = 1.0;
 
-struct Data{
-    double time;
-    Point Loc_Speed;
-};
 struct Point {
   double location;
   double speed;
 };
+
+struct Data{
+    double time;
+    Point Loc_Speed;
+};
+
 
 // explizit verfahren
 Point base_equation(Point* Value, double *h) 
