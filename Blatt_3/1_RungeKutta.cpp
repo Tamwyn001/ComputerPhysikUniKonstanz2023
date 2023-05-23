@@ -14,9 +14,9 @@ struct Data {
   Point Loc_Speed;
   double energie;
 };
+
 Data TempData;
 
-// explizit verfahren
 Point base_equation(Point *Value, double *h) {
   Point Out;
 
@@ -36,11 +36,12 @@ Point k_2(Point *Values, double *h) {
   Point f_n;
   f_n = k_1(Values, h);
 
-  f_n.speed = Values->speed + f_n.speed / 2.;
-  f_n.location = Values->location + f_n.location / 2.;
+  f_n.location = Values->location + (f_n.location / 2.);
+  f_n.speed = Values->speed + (f_n.speed / 2.);
 
-  double x_new = (*h) + (*h) / 2;
-  // double x_new = TempData.time + (*h)/2;
+
+  // double x_new = (*h) + (*h) / 2;
+  double x_new = TempData.time + ((*h) / 2);
 
   f_n = base_equation(&f_n, &x_new);
 
@@ -49,8 +50,9 @@ Point k_2(Point *Values, double *h) {
   return Out;
 }
 void runge_kutta(Point *Values, double *h) {
-  Values->location = Values->location + k_2(Values, h).location;
-  Values->speed = Values->speed + k_2(Values, h).speed;
+  Point f_n = k_2(Values, h);
+  Values->location = Values->location + f_n.location;
+  Values->speed = Values->speed + f_n.speed;
 }
 
 int main(int argc, char *argv[]) {
@@ -58,10 +60,8 @@ int main(int argc, char *argv[]) {
   // physical systems constants
   // feder constant
 
-  Point value;
-  value.location = 0.;
-  value.speed = 1.;
-  TempData.Loc_Speed = value;
+  TempData.Loc_Speed.location = 0.;
+  TempData.Loc_Speed.speed = 1.;
   TempData.time = 0;
 
   // simulation constant
@@ -71,17 +71,17 @@ int main(int argc, char *argv[]) {
 
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
-  Data TempData;
+
   // std::cout << "Time" << " | " << "|" << "Location" << " | "<<"Speed" <<"\n";
   for (int i = 0; i < iterations; i++) {
 
-    runge_kutta(&value, &interval);
+    runge_kutta(&TempData.Loc_Speed, &interval);
 
-    TempData.Loc_Speed = value;
+    TempData.energie =
+        (TempData.Loc_Speed.speed * TempData.Loc_Speed.speed +
+         (k / m) * TempData.Loc_Speed.location * TempData.Loc_Speed.location) /
+        2.0;
     TempData.time = TempData.time + interval;
-    TempData.energie = (value.speed * value.speed +
-                        (k / m) * value.location * value.location) /
-                       2.0;
 
     simulation_result.push_back(TempData);
     std::cout << TempData.time << " " << TempData.Loc_Speed.location << " "
