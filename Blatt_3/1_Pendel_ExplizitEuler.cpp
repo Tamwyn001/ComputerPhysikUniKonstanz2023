@@ -1,47 +1,54 @@
 #include <iostream>
 #include <vector>
 
-struct Point {
-  double time;
-  double value;
-  double energie;
-};
-
-// explizit verfahren
-void euler(double *x, double *v, double interval, double k, double m) {
-  *v = *v - interval * (k / m) * (*x);
-  *x = *x + interval * *v;
-}
-
-int main(int argc, char *argv[]) {
-
   // physical systems constants
   // feder constant
   const double k = 1.0;
 
   // mass
-  const double m = 3.0;
+  const double m = 1.0;
+struct Data
+{
+  double location;
+  double speed;
+};
 
-  double x = 0.;
-  double v = 2.0;
+struct Point {
+  double time;
+  Data speed_loc;
+  double energie;
+};
+
+// explizit verfahren
+void euler(Data* Value, double interval) 
+{
+  Data Old;
+  Old = (*Value);
+  Value->location = Old.location + interval * (Old.speed);
+  Value->speed = (Old.speed) - interval * (k / m) * (Old.speed);
+}
+
+int main(int argc, char *argv[]) 
+{
+  Point value;
+  value.speed_loc.location = 0.0;
+  value.speed_loc.speed = 1.0;
 
   // simulation constant
   // time intervall
 
-  const double iterations = 100.;
-  const double duration = 30.;
+  const double iterations = 1000.;
+  const double duration = 10.;
 
   double interval = duration / iterations;
   std::vector<Point> simulation_result;
 
   for (int i = 0; i < iterations; i++) {
-    euler(&x, &v, interval, k, m);
-    Point value;
-    value.time = x;
-    value.value = v;
-    value.energie = ((v) * (v) + (k / m) * (x) * (x)) / 2.0;
+    euler(&value.speed_loc,interval);
+    value.time = value.time + interval;
+    value.energie = ((value.speed_loc.speed) * (value.speed_loc.speed) + (k / m) * (value.speed_loc.location) * (value.speed_loc.location)) / 2.0;
     simulation_result.push_back(value);
-    std::cout << i * interval << " " << x <<" "<< v << " " << value.energie << "\n";
+    std::cout << i * interval << " " << value.speed_loc.location <<" "<<value.speed_loc.speed << " " << value.energie << "\n";
   }
 
   return 0;

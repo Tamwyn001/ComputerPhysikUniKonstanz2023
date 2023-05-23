@@ -13,31 +13,30 @@ struct Point {
 struct Data {
   double time;
   Point Loc_Speed;
-  double energie;
+  double energie;  
 };
-Data TempData;
 
-void base_acceleration(double *speed, double *acceleration, double *h) {
-  *acceleration = (*acceleration) - (k / m) * (*speed);
+
+void base_acceleration(double* speed, double* acceleration, double *h) {
+  *acceleration = (*acceleration) - (k / m) * (*speed)*(*h);
 }
 
 void leap_frog(Point *Values, double *h) {
   // update acceleration
   base_acceleration(&Values->speed, &Values->acceleration, h);
 
-  Values->speed = Values->speed + (*h) * Values->acceleration;
   Values->location = Values->location + Values->speed * (*h);
+  Values->speed = Values->speed + (*h) * Values->acceleration;
+  
 }
 
 int main(int argc, char *argv[]) {
 
   // physical systems constants
   // feder constant
-
-  Point value;
-  value.location = 0.;
-  value.speed = 1.;
-  TempData.Loc_Speed = value;
+  Data TempData;
+  TempData.Loc_Speed.location = 0.;
+  TempData.Loc_Speed.speed = 1.;
   TempData.time = 0;
 
   // simulation constant
@@ -47,16 +46,14 @@ int main(int argc, char *argv[]) {
 
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
-  Data TempData;
   // std::cout << "Time" << " | " << "|" << "Location" << " | "<<"Speed" <<"\n";
   for (int i = 0; i < iterations; i++) {
 
-    leap_frog(&value, &interval);
+    leap_frog(&TempData.Loc_Speed, &interval);
 
-    TempData.Loc_Speed = value;
     TempData.time = TempData.time + interval;
-    TempData.energie = (value.speed * value.speed +
-                        (k / m) * value.location * value.location) /
+    TempData.energie = (TempData.Loc_Speed.speed * TempData.Loc_Speed.speed +
+                        (k / m) * TempData.Loc_Speed.location * TempData.Loc_Speed.location)/
                        2.0;
 
     simulation_result.push_back(TempData);
