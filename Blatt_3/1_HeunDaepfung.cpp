@@ -3,7 +3,7 @@
 
 const double k = 1.0;
 const double m = 1.;
-
+const double gamma = 1.0;
 struct Point {
   double location;
   double speed;
@@ -17,23 +17,42 @@ struct Data {
 
 Data TempData;
 
+Point base_equation(Point *Value, double *h) {
+  Point Out;
+
+  Out.location = Value->location + (*h) * Value->speed;
+  Out.speed = Value->speed - (k / m) * (*h) * (Value->location);
+
+  return Out;
+}
 Point k_1(Point *Values, double *h) {
-  Point F ;
-  F.location = (Values->speed) * (*h);
-  F.speed = -(Values->location)*(k/m)* (*h);
+  Point F = base_equation(Values, &TempData.time);
+  F.location = F.location * (*h);
+  F.speed = F.speed * (*h);
   return F;
 }
-Point k_2(Point *Values, double *h) {
+Point predic(Point *Values, double *h) {
+  Point Out;
   Point f_n;
   f_n = k_1(Values, h);
-  f_n.location = (*h)*(Values->speed + f_n.speed/2.);
-  f_n.speed = -(*h)*(k/m)*(Values->location + f_n.location /2.);
-  return f_n;
+
+  f_n.location = Values->location + (f_n.location * (*h)/ 2.);
+  f_n.speed = Values->speed + (f_n.speed * (*h)/ 2.);
+
+
+  // double x_new = (*h) + (*h) / 2;
+  double x_new = TempData.time + ((*h) / 2);
+
+  f_n = base_equation(&f_n, &x_new);
+
+  Out.location = (*h) * f_n.location;
+  Out.speed = (*h) * f_n.speed;
+  return Out;
 }
-void runge_kutta(Point *Values, double *h) {
-  Point f_n = k_2(Values, h);
-  Values->location = Values->location + f_n.location;
-  Values->speed = Values->speed + f_n.speed;
+void heun(Point *Values, double *h) {
+  Point r_predic = predic(Values, h);
+  Values->location = (1/2.)* (Values->location + r_predic.location + (*h)/2);
+  Values->speed = Values->speed + r_predic.speed;
 }
 
 int main(int argc, char *argv[]) {
@@ -47,8 +66,8 @@ int main(int argc, char *argv[]) {
 
   // simulation constant
   // time intervall
-  const double iterations = 6000.;
-  const double duration = 60.;
+  const double iterations = 1000.;
+  const double duration = 10.;
 
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
@@ -56,7 +75,7 @@ int main(int argc, char *argv[]) {
   // std::cout << "Time" << " | " << "|" << "Location" << " | "<<"Speed" <<"\n";
   for (int i = 0; i < iterations; i++) {
 
-    runge_kutta(&TempData.Loc_Speed, &interval);
+    heun(&TempData.Loc_Speed, &interval);
 
     TempData.energie =
         (TempData.Loc_Speed.speed * TempData.Loc_Speed.speed +
