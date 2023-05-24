@@ -36,8 +36,8 @@ Point k_2(Point *Values, double *h) {
   Point f_n;
   f_n = k_1(Values, h);
 
-  f_n.location = Values->location + (f_n.location / 2.);
-  f_n.speed = Values->speed + (f_n.speed / 2.);
+  f_n.location = Values->location + (f_n.location * (*h)/ 2.);
+  f_n.speed = Values->speed + (f_n.speed * (*h)/ 2.);
 
 
   // double x_new = (*h) + (*h) / 2;

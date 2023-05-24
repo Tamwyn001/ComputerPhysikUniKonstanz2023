@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
 
   // simulation constant
   // time intervall
-  const double iterations = 1000.;
-  const double duration = 10.;
+  const double iterations = 6000.;
+  const double duration = 60.;
 
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
