@@ -3,7 +3,7 @@
 
 const double k = 1.0;
 const double m = 1.;
-const double gamma = 1.0;
+const double gamma = 10; //schwache schwingung: 0.1, APGF: 1.1, KF: 10
 struct Point {
   double location;
   double speed;
@@ -33,26 +33,14 @@ Point k_1(Point *Values, double *h) {
 }
 Point predic(Point *Values, double *h) {
   Point Out;
-  Point f_n;
-  f_n = k_1(Values, h);
-
-  f_n.location = Values->location + (f_n.location * (*h)/ 2.);
-  f_n.speed = Values->speed + (f_n.speed * (*h)/ 2.);
-
-
-  // double x_new = (*h) + (*h) / 2;
-  double x_new = TempData.time + ((*h) / 2);
-
-  f_n = base_equation(&f_n, &x_new);
-
-  Out.location = (*h) * f_n.location;
-  Out.speed = (*h) * f_n.speed;
+  Out.location = Values->location +(*h)*Values->speed;
+  Out.speed = Values->speed - (*h)*((k/m)*Values->location + gamma * Values->speed);
   return Out;
 }
 void heun(Point *Values, double *h) {
   Point r_predic = predic(Values, h);
-  Values->location = (1/2.)* (Values->location + r_predic.location + (*h)/2);
-  Values->speed = Values->speed + r_predic.speed;
+  Values->location = (1/2.)* (Values->location + r_predic.location + (*h)*r_predic.speed);
+  Values->speed = (1/2.)*(Values->speed + r_predic.speed - (*h)*((k/m)*r_predic.location + gamma * r_predic.speed));
 }
 
 int main(int argc, char *argv[]) {
@@ -66,8 +54,8 @@ int main(int argc, char *argv[]) {
 
   // simulation constant
   // time intervall
-  const double iterations = 1000.;
-  const double duration = 10.;
+  const double iterations = 6000.;
+  const double duration = 60.;
 
   double interval = duration / iterations;
   std::vector<Data> simulation_result;
@@ -76,7 +64,6 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < iterations; i++) {
 
     heun(&TempData.Loc_Speed, &interval);
-
     TempData.energie =
         (TempData.Loc_Speed.speed * TempData.Loc_Speed.speed +
          (k / m) * TempData.Loc_Speed.location * TempData.Loc_Speed.location) /
