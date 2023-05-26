@@ -40,8 +40,8 @@ void verlet(Data *Values, double *h, std::vector<double> *last_xn) {
   Values->location = 1 / (2 + gamma * (*h)) *
                      (2 * (*h) * (*h) * external_force(Values, h) +
                       2 * Values->location *
-                          (2 - (*h) * (*h) * (omega_pendel) * (omega_pendel) +
-                           (x_n_m1) * (gamma * (*h) - 2)));
+                          (2 - (*h) * (*h) * (omega_pendel) * (omega_pendel)) +
+                           (x_n_m1) * (gamma * (*h) - 2));
 }
 
 int main(int argc, char *argv[]) {
@@ -58,15 +58,15 @@ int main(int argc, char *argv[]) {
   std::vector<double> values_at_time;
   std::vector<double> x_n_temp;
 
-  for (double iter_omega = 0; iter_omega < 10.; iter_omega = iter_omega + 0.1) {
+  for (double iter_omega = 0; iter_omega < 10; iter_omega = iter_omega + 0.1) {
     omega_trieb = iter_omega;
     std::cout << omega_trieb << " ";
 
     double x_min, x_max = TempData.location;
-    //for (double iter_gamma : gammas) {
-      gamma =2;// iter_gamma;
+    for (double iter_gamma : gammas) {
+      gamma = iter_gamma;
 
-      TempData.location = 0.;
+      TempData.location = 1.;
       TempData.time = 0.;
       double last_xn = 0.;
       for (double i = 0; i < iterations; i += 1) {
@@ -75,10 +75,11 @@ int main(int argc, char *argv[]) {
 
         TempData.time = TempData.time + interval;
         update_max_amplitude(&TempData.location, &x_min, &x_max);
+        std::cout<<TempData.location;
       }
       amplitude = x_max - x_min;
       std::cout << amplitude << " ";
-    //}
+    }
     std::cout << "\n";
   }
   return 0;
