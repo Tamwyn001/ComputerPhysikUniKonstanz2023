@@ -1,0 +1,1 @@
+splot "PendelResult.dat" u 2:3:4 w l lw 4 title "Location 1","PendelResult_1.dat" u 2:3:4 w l lw 4 title "Location 2", "PendelResult_2.dat" u 2:3:4 w l lw 4 title "Location 3", "PendelLocation.dat" u 1:2:3 w p pointsize 4 title "Magnets"
