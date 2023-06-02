@@ -6,9 +6,9 @@
 #define M_PI 3.14159265358979323846 // pi
 
 struct R3 {
-  double x;
-  double y;
-  double z;
+  double x = 0;
+  double y = 0;
+  double z = 0;
 
   // addition
   R3 operator+(const R3 &other) const {
@@ -53,7 +53,7 @@ public:
   Magnet(int index, int total, double radius);
   R3 force(R3 *particle_loc) {
     R3 force =
-        ((*particle_loc) - (location)) * (1 / norm((*particle_loc) - location));
+        ( (*particle_loc)-(location) ) * (1 / std::pow(norm((*particle_loc)-location),3));
     //std::cout << "Magnet force X:" << force.x << " Y: " << force.y;
     return force;
   };
@@ -89,7 +89,7 @@ R3 acceleration(R3 *location, R3 *speed) {
   for (Magnet magnet : all_magnets) {
     force_magnets = force_magnets + magnet.force(location);
   }
-  return force_magnets - (*speed) * gamma - (*location) * k;
+  return (force_magnets - (*speed) * gamma - (*location) * k) * (1/mass);
 }
 
 void leap_frog(R3 *old_location, R3 *old_speed) {
@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
   speed.x = 0;
   speed.y = 0;
   speed.z = 0.;
-  location.x = -2.2;
-  location.y = 2.2;
+  location.x = 1.1;
+  location.y = 1.1;
   location.z = 0.25;
   int num_magnets;
   std::cout << "How many pendels"
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     all_magnets.push_back(Magnet(i + 1, num_magnets, 1.));
   }
   R3 last_Loc;
-  std::ofstream file("C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/PendelResult_2.dat");
+  std::ofstream file("C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/PendelResult.dat");
   
   file << "Time "
        << "x_x "
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     for (double time = 0; time < max_time; time = time + h) {
       last_Loc = location; 
       leap_frog(&location, &speed);
-      if ((norm(location - last_Loc) < std::pow(10.,-23)) && (time>max_time/10))
+      if ((norm(location - last_Loc) < std::pow(10.,-10)) && (time>max_time/10))
       {
         std::cout<<"BREAK "<<norm(location - last_Loc)<<"\n";
         break;
