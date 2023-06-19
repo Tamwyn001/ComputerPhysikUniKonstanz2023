@@ -50,11 +50,12 @@ double norm(R3 vector) {
 class Magnet {
 public:
   R3 location;
+  const double magnetical_strength = 10.;
   Magnet(int index, int total, double radius);
   R3 force(R3 *particle_loc) {
     R3 force =
-        ( (*particle_loc)-(location) ) * (1 / std::pow(norm((*particle_loc)-location),3));
-    //std::cout << "Magnet force X:" << force.x << " Y: " << force.y;
+        ( (location)- (*particle_loc) ) * (1 / std::pow(norm(location - (*particle_loc)),3))* magnetical_strength;
+      force.z = 0;
     return force;
   };
 };
@@ -69,12 +70,12 @@ Magnet::Magnet(int index, int total, double radius) {
 
 // simulation params
 double max_time = 1000.;
-double iteration_per_sec = 75.;
+double iteration_per_sec = 7500.;
 double h = 1 / iteration_per_sec;
 
 // pysical params
-double gamma = 0.2;
-double k = 0.5;
+double gamma = 2.;
+double k = 0.;
 double mass = 1;
 
 // magnets
@@ -89,7 +90,7 @@ R3 acceleration(R3 *location, R3 *speed) {
   for (Magnet magnet : all_magnets) {
     force_magnets = force_magnets + magnet.force(location);
   }
-  return (force_magnets - (*speed) * gamma - (*location) * k) * (1/mass);
+  return (force_magnets  - (*speed) * gamma - (*location) * k) * (1/mass);
 }
 
 void leap_frog(R3 *old_location, R3 *old_speed) {
@@ -103,8 +104,8 @@ int main(int argc, char *argv[]) {
   speed.x = 0;
   speed.y = 0;
   speed.z = 0.;
-  location.x = 1.1;
-  location.y = 1.1;
+  location.x = 1;
+  location.y = -0.7;
   location.z = 0.25;
   int num_magnets;
   std::cout << "How many pendels"
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
     all_magnets.push_back(Magnet(i + 1, num_magnets, 1.));
   }
   R3 last_Loc;
-  std::ofstream file("C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/PendelResult.dat");
+  std::ofstream file("C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/PendelResult_Long.dat");
   
   file << "Time "
        << "x_x "
@@ -124,17 +125,43 @@ int main(int argc, char *argv[]) {
        << "v_y "
        << "\n";
   if (file.is_open()) {
-    for (double time = 0; time < max_time; time = time + h) {
-      last_Loc = location; 
-      leap_frog(&location, &speed);
-      if ((norm(location - last_Loc) < std::pow(10.,-10)) && (time>max_time/10))
+    /*for (double time = 0; time < max_time; time = time + h) {
+      
+      while ((norm(location - last_Loc) > std::3pow(10.,-10)) && (time>max_time/10))
       {
+        last_Loc = location; 
+        leap_frog(&location, &speed);
         std::cout<<"BREAK "<<norm(location - last_Loc)<<"\n";
         break;
+        
+        file << time << " " << (location.x) << " " << (location.y) << " "<< (location.z) << " "
+          << (speed.x) << " " << (speed.y) << "\n";
       }
-      file << time << " " << (location.x) << " " << (location.y) << " "<< (location.z) << " "
-           << (speed.x) << " " << (speed.y) << "\n";
-    }
+      */
+     bool is_on_the_magnet(R3 * Location, std::vector<Magnet>* all_magnets)
+     {
+
+      return true;
+     }
+     double time = 0;
+     int counter = 0;
+     while(is_on_the_magnet(&location, &all_magnets))
+      {
+        time += h;
+
+        last_Loc = location; 
+        leap_frog(&location, &speed);
+        file << time << " " << (location.x) << " " << (location.y) << " "<< (location.z) << " "
+          << (speed.x) << " " << (speed.y) << "\n";
+        if( norm(location-last_Loc) < std::pow(10.,-10)){
+          counter += 1;
+        }else{
+          counter = 0;
+        }
+    
+        //  std::cout<<counter;
+      }
+    std::cout<<"End location is:"<< location.x<< " ; "<<location.y<<"\n";
   } else {
     std::cout << "Cant open file"
               << "\n";
