@@ -1,4 +1,6 @@
 
 plot "PendelResult.dat" u 2:3 w l lw 4 title "Particle 1","PendelResult_1.dat" u 2:3 w l lw 4 title "Particle 2", "PendelResult_2.dat" u 2:3 w l lw 4 title "Particle 3", "PendelLocation.dat" u 1:2 w p pointsize 4 title "Magnets"
 
-plot "PendelResult_Long.dat" u 2:3 w l lw 4 title "Particle 1","PendelLocation.dat" u 1:2 w p pointsize 4 title "Magnets"
+plot "PendelResult.dat" u 2:3 w l lw 4 title "Particle 1","PendelLocation.dat" u 1:2 w p pointsize 4 title "Magnets"
+
+cd "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4"
