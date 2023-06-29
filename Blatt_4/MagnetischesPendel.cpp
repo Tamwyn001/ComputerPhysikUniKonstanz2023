@@ -6,6 +6,7 @@
 
 #define M_PI 3.14159265358979323846 // pi
 
+//Datenstruktur eines R3 Vektor
 struct R3 {
   double x = 0;
   double y = 0;
@@ -41,6 +42,7 @@ struct R3 {
   }
 };
 
+//Mathematische Norm eines R3 Vektor
 double norm(R3 *vector) {
   return std::sqrt(std::pow((vector->x), 2) + std::pow((vector->y), 2) +
                    std::pow((vector->z), 2));
@@ -50,6 +52,9 @@ double norm(R3 vector) {
                    std::pow((vector.z), 2));
 }
 
+//Ein Klasse für Magneten, um die Kraft zu berechen und später die Konvergenz gegen Magnet mithilfe
+// einer "Magnet Index" vgereinfachen
+
 class Magnet {
 public:
   R3 location;
@@ -57,6 +62,8 @@ public:
   int index;
 
   Magnet(int id, int total, double radius);
+
+  //magntische Kraft
   R3 force(R3 *particle_loc) {
     R3 connection_vector = (location) - (*particle_loc);
     connection_vector.z = 0; // projection on the plane
@@ -68,6 +75,7 @@ public:
   };
 };
 
+//Konstruktor um die Position auf dem Einheitskreis zu teilen
 Magnet::Magnet(int id, int total, double radius) {
   index = id;
   location.x = radius * std::cos((index * 2 * M_PI) / total);
@@ -93,6 +101,7 @@ std::vector<Magnet> all_magnets;
 R3 speed;
 R3 location;
 
+//Summe der Kräft nach Newton
 R3 acceleration(R3 *location, R3 *speed) {
   R3 force_magnets;
   for (Magnet magnet : all_magnets) {
@@ -101,12 +110,15 @@ R3 acceleration(R3 *location, R3 *speed) {
   return (force_magnets - (*speed) * gamma - (*location) * k) * (1 / mass);
 }
 
+//das Leap Frog Verfahren
 void leap_frog(R3 *old_location, R3 *old_speed) {
   R3 temp_speed;
   (*old_location) = (*old_location) + (*old_speed) * h;
   (*old_speed) = (*old_speed) + acceleration(old_location, old_speed) * h;
   return;
 }
+
+//Aufhörenbedingung des Simulation
 bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets, bool * is_successful_end, int * count) {
   double distance = 10000.;
   double temp_distance;
@@ -116,7 +128,7 @@ bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets, boo
     (*is_successful_end) = false;
     return false;
   }
-  
+  //wir rechnen  die Distanz zu jeden Magneten und nehmen die kleinste
   for (Magnet comparing_magnet : *all_magnets) {
     R3 difference_vector = comparing_magnet.location - (*pendel_location);
     difference_vector.z = 0;
@@ -125,7 +137,8 @@ bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets, boo
 
     if (temp_distance < distance) {
       distance = temp_distance;
-      //std::cout << "last distance " << distance << "\n";
+    
+    //das Teilchen ist als gefangen betrachten, wenn sie nah am Pendel fliegt
       if (distance < 0.001) {
 
         (*is_successful_end) = true;
@@ -137,6 +150,7 @@ bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets, boo
   return true;
 }
 
+//greift bei welchen Magnet das pendel gefangen ist.
 int retrive_pendel(R3 *location, std::vector<Magnet> *Magnets) {
   double last_distance = 10000;
   double temp_dist;
@@ -156,7 +170,7 @@ int retrive_pendel(R3 *location, std::vector<Magnet> *Magnets) {
   return out_id;
 }
 
-
+//das simulation für eine Pendel
 void calculate_trajectorie(R3 *location, R3 *speed,
                            std::vector<Magnet> *all_magnets,
                            std::string pendel_id, bool * is_successful_end) {
@@ -175,6 +189,8 @@ void calculate_trajectorie(R3 *location, R3 *speed,
          << "\n";
     double time = 0;
     int count = 0;
+
+    //schleife für jede zeitschritt
     while (does_pendel_move(location, all_magnets, is_successful_end, &count)) {
       
       time += h;
@@ -225,6 +241,7 @@ int main(int argc, char *argv[]) {
   }
   R3 last_Loc;
 
+  //nur für eine Pendel
   if (mode == 0) {
     speed.x = 0;
     speed.y = 0;
@@ -235,6 +252,7 @@ int main(int argc, char *argv[]) {
     std::string tag = "chaos";
     calculate_trajectorie(&location, &speed, &all_magnets, tag, &is_successful_end);
   } else {
+    //Bild Erstellung
     int resolution;
 
     std::cout << "Resolution:"
@@ -261,6 +279,7 @@ int main(int argc, char *argv[]) {
                           std::to_string((i + 1) * (j + 1)) + "\", ";
         if (is_successful_end)
         {
+          //Abbildungsmatrix
            file_matrix<<retrive_pendel(&location, &all_magnets)<< " ";
         }
         else
