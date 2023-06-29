@@ -43,6 +43,7 @@
         "xstddef": "cpp",
         "xstring": "cpp",
         "xutility": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "string": "cpp"
     }
 }

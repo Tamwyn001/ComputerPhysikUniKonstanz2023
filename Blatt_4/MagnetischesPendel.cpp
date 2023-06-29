@@ -53,9 +53,10 @@ double norm(R3 vector) {
 class Magnet {
 public:
   R3 location;
-  const double magnetical_strength = 10.;
+  const double magnetical_strength = 1000.;
+  int index;
 
-  Magnet(int index, int total, double radius);
+  Magnet(int id, int total, double radius);
   R3 force(R3 *particle_loc) {
     R3 connection_vector = (location) - (*particle_loc);
     connection_vector.z = 0; // projection on the plane
@@ -67,19 +68,21 @@ public:
   };
 };
 
-Magnet::Magnet(int index, int total, double radius) {
+Magnet::Magnet(int id, int total, double radius) {
+  index = id;
   location.x = radius * std::cos((index * 2 * M_PI) / total);
   location.y = radius * std::sin((index * 2 * M_PI) / total);
   location.z = 0.;
+  
 }
 
 // simulation params
 double max_time = 1000.;
-double iteration_per_sec = 7500.;
+double iteration_per_sec = 350.;
 double h = 1 / iteration_per_sec;
 
 // pysical params
-double gamma = .2;
+double gamma = 0.2;
 double k = 0.1;
 double mass = 1;
 
@@ -104,10 +107,16 @@ void leap_frog(R3 *old_location, R3 *old_speed) {
   (*old_speed) = (*old_speed) + acceleration(old_location, old_speed) * h;
   return;
 }
-bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets) {
+bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets, bool * is_successful_end, int * count) {
   double distance = 10000.;
   double temp_distance;
-
+  if ((*count) > 10000)
+  {
+    std::cout<<"Sinulation canceled"<< "\n";
+    (*is_successful_end) = false;
+    return false;
+  }
+  
   for (Magnet comparing_magnet : *all_magnets) {
     R3 difference_vector = comparing_magnet.location - (*pendel_location);
     difference_vector.z = 0;
@@ -115,69 +124,159 @@ bool does_pendel_move(R3 *pendel_location, std::vector<Magnet> *all_magnets) {
     temp_distance = norm(difference_vector);
 
     if (temp_distance < distance) {
-      // std::cout<<"Magnet Loc x"<<comparing_magnet.location.x<<distance<<"\n";
       distance = temp_distance;
+      //std::cout << "last distance " << distance << "\n";
       if (distance < 0.001) {
+
+        (*is_successful_end) = true;
         return false;
       }
     }
   }
+  (*is_successful_end) = false;
   return true;
 }
 
-int main(int argc, char *argv[]) {
-  speed.x = 0;
-  speed.y = 0;
-  speed.z = 0.;
-  location.x = 1;
-  location.y = -0.73;
-  location.z = 0.25;
-  int num_magnets;
-  std::cout << "How many pendels"
-            << "\n";
-  std::cin >> num_magnets;
+int retrive_pendel(R3 *location, std::vector<Magnet> *Magnets) {
+  double last_distance = 10000;
+  double temp_dist;
+  int out_id = 0;
 
-  std::ofstream file(
-      "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/"
-      "PendelResult.dat",
-      std::ios::trunc);
-  std::ofstream file_pendel(
-      "C:/Users/Tamwyn/Documents/Physik/"
-      "ComputerPhysikUniKonstanz2023/Blatt_4/PendelLocation.dat",
-      std::ios::trunc);
+  for (Magnet comparing_magnet : *Magnets) {
+    temp_dist = norm((*location - comparing_magnet.location));
 
-  for (int i = 0; i < num_magnets; i++) {
-    Magnet new_magnet = Magnet(i + 1, num_magnets, 1.);
-    all_magnets.push_back(new_magnet);
-    file_pendel << new_magnet.location.x << " " << new_magnet.location.y
-                << " " << 0. << "\n";
+    if (temp_dist < last_distance) {
+      last_distance = temp_dist;
+      //std::cout<<" ID:"<<comparing_magnet.index<<" dist:"<<last_distance<<" ";
+      out_id = comparing_magnet.index;
+    }
   }
-  R3 last_Loc;
 
-  file << "Time "
-       << "x_x "
-       << "x_y "
-       << "x_z "
-       << "v_x "
-       << "v_y "
-       << "\n";
+  //std::cout<<"Out ID:"<< out_id;
+  return out_id;
+}
+
+
+void calculate_trajectorie(R3 *location, R3 *speed,
+                           std::vector<Magnet> *all_magnets,
+                           std::string pendel_id, bool * is_successful_end) {
+  std::string path =
+      "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_4/"
+      "PendelResult_" +
+      pendel_id + ".dat";
+  std::ofstream file(path, std::ios::trunc);
   if (file.is_open()) {
-
+    file << "Time "
+         << "x_x "
+         << "x_y "
+         << "x_z "
+         << "v_x "
+         << "v_y "
+         << "\n";
     double time = 0;
-    int counter = 0;
-    while (does_pendel_move(&location, &all_magnets)) {
+    int count = 0;
+    while (does_pendel_move(location, all_magnets, is_successful_end, &count)) {
+      
       time += h;
 
-      leap_frog(&location, &speed);
-      location.z = 0.25;
-      file << time << " " << (location.x) << " " << (location.y) << " "
-           << (location.z) << " " << (speed.x) << " " << (speed.y) << "\n";
+      leap_frog(location, speed);
+      (*location).z = 0.25;
+      file << time << " " << ((*location).x) << " " << ((*location).y) << " "
+           << ((*location).z) << "\n";
+      count++;
     }
-    std::cout << "End location is:" << location.x << " ; " << location.y
-              << "\n";
+    //std::cout << "End (*location) is:" << (*location).x << " ; "
+    //         << (*location).y << "\n";
   } else {
     std::cout << "Cant open file"
               << "\n";
   }
+  return;
+}
+int main(int argc, char *argv[]) {
+
+  bool is_successful_end;
+  int num_magnets;
+  int mode;
+  std::cout << "Compute image (1) or trajectorie (0)"
+            << "\n";
+  std::cin >> mode;
+  std::cout << "How many pendels"
+            << "\n";
+  std::cin >> num_magnets;
+
+  std::ofstream file_pendel(
+      "C:/Users/Tamwyn/Documents/Physik/"
+      "ComputerPhysikUniKonstanz2023/Blatt_4/PendelLocation.dat",
+      std::ios::trunc);
+  std::ofstream file_matrix("C:/Users/Tamwyn/Documents/Physik/"
+                            "ComputerPhysikUniKonstanz2023/Blatt_4/Matrix.dat",
+                            std::ios::trunc);
+
+  std::ofstream file_lerp("C:/Users/Tamwyn/Documents/Physik/"
+                            "ComputerPhysikUniKonstanz2023/Blatt_4/Matrix_Lerp.dat",
+                            std::ios::trunc);
+
+  for (int i = 0; i < num_magnets; i++) {
+    Magnet new_magnet = Magnet(i + 1, num_magnets, 1.);
+    all_magnets.push_back(new_magnet);
+    file_pendel << new_magnet.location.x << " " << new_magnet.location.y << " "
+                << new_magnet.index << "\n";
+  }
+  R3 last_Loc;
+
+  if (mode == 0) {
+    speed.x = 0;
+    speed.y = 0;
+    speed.z = 0.;
+    location.x = 1.15;
+    location.y = -0.63;
+    location.z = 0.25;
+    std::string tag = "chaos";
+    calculate_trajectorie(&location, &speed, &all_magnets, tag, &is_successful_end);
+  } else {
+    int resolution;
+
+    std::cout << "Resolution:"
+              << "\n";
+    std::cin >> resolution;
+    std::string tag;
+    std::string gnuplot_command = "plot ";
+    for (int j = 0; j < resolution; j++) {
+      for (int i = 0; i < resolution; i++) {
+        speed.x = 0.;
+        speed.y = 0.;
+        speed.z = 0.;
+        location.x = -1 + double(2*i) / double(resolution-1);
+        location.y = -1 + double(2*j) / double(resolution-1);
+        //std::cout << "Start x: " << location.x << " "
+        //          << "Start y: " << location.y << "\n";
+        location.z = 0.25;
+
+        tag = std::to_string(i) + "_" + std::to_string(j);
+        calculate_trajectorie(&location, &speed, &all_magnets, tag, &is_successful_end);
+        gnuplot_command = gnuplot_command + "\"PendelResult_" +
+                          std::to_string(i) + "_" + std::to_string(j) +
+                          ".dat\" u 2:3 w l lw 4 title \"Particle " +
+                          std::to_string((i + 1) * (j + 1)) + "\", ";
+        if (is_successful_end)
+        {
+           file_matrix<<retrive_pendel(&location, &all_magnets)<< " ";
+        }
+        else
+        {
+           file_matrix<< 0 << " ";
+        }
+       
+      }
+      std::cout << "\n";
+      file_matrix << "\n";
+    }
+    std::cout
+        << gnuplot_command
+        << "\"PendelLocation.dat\" u 1:2 w p pointsize 4 title \"Magnets\""
+        << "\n";
+  }
+
   return 0;
 }
