@@ -6,3 +6,13 @@ plot "Numerov.dat" u 1:4 w l lw 6 title "F"
 set xlabel "{/:Bold Radius r}"
 set ylabel "{/:Bold Phi(r)}"
 plot "Numerov.dat" u 1:5 w l lw 6 title "Numerov", "Numerov.dat" u 1:6 w l lw 6 linetype 4 dashtype 3 title "Analytical"
+
+
+set xlabel "{/:Bold Ort x}"
+set ylabel "{/:Bold Psi(x)}"
+
+plot  0 w l lw 4, "Psi__E0.000000__.dat" u 1:2 w l lw 6 linetype 4 dashtype 1 title "Psi_{E_0}(x)"
+plot  0 w l lw 4, "Psi__E1.000000__.dat" u 1:2 w l lw 6 linetype 4 dashtype 1 title "Psi_{E_1}(x)"
+plot  0 w l lw 4, "Psi__E2.000000__.dat" u 1:2 w l lw 6 linetype 4 dashtype 1 title "Psi_{E_2}(x)"
+plot  0 w l lw 4, "Psi__E3.000000__.dat" u 1:2 w l lw 6 linetype 4 dashtype 1 title "Psi_{E_3}(x)"
+plot  0 w l lw 4, "Psi__E4.000000__.dat" u 1:2 w l lw 6 linetype 4 dashtype 1 title "Psi_{E_4}(x)"

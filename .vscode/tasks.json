@@ -13,7 +13,7 @@
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${fileDirname}\\bin"
             },
             "problemMatcher": [
                 "$gcc"
