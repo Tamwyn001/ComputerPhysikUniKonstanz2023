@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+//simulations constants
 const double HBAR = 1; //1.054571817e-34;
 
 const double xmax = 20.;
@@ -12,20 +13,24 @@ const double start_pos = 0.;
 
 const double mass = 1.;
 
+//the outup and process data structure
 struct Wavefunction {
   double position;
   double amplitude;
+  double analytical;
 };
 
+//the save buffer, need to be saved in a file and then flushed if we change the simulation context
 std::vector<Wavefunction> results;
 
+//for newton we need to remap a value to the closer value in the result list in order to interate on the list
 bool is_in_ball(double center, double radius, double value){
-  //std::cout<<value - center <<"\n";
   return abs(value - center ) <= radius;
 }
 
-int find_index_at_position(double position){
 
+//for newton we need to know at wich index ID(x) we are take the amplitude A(x)
+int find_index_at_position(double position){
   int i = 0;
   for (Wavefunction temp_result : results){
 
@@ -37,6 +42,13 @@ int find_index_at_position(double position){
   return i;
 }
 
+//the analytical solution of the wave function at a given place
+double analytical_psi(double position){
+  double ai, aip, bi,bip;
+  double x = pow(2*mass/(HBAR*HBAR), 1./3.);
+  //return alglib::airy(position, ai, aip, bi, bip);
+}
+//the potential of the 1D Space
 double potential(double x) {
   if (x < 0) {
     return INFINITY;
@@ -44,14 +56,17 @@ double potential(double x) {
   return x;
 }
 
+//the k^2 terme in Numerov-process
 double k2(double x, double m, double E) {
   return 2 * m / HBAR * ( E - potential(x));
 }
 
-void save_result(double position, double amplitude){
+//save some data in the results list
+void save_result(double position, double amplitude, double anaylical){
   Wavefunction temp_result;
   temp_result.position=position;
   temp_result.amplitude = amplitude;
+  temp_result.analytical = anaylical;
   results.push_back(temp_result);
 }
 
@@ -67,7 +82,7 @@ double shoot_numerov(double E, bool save_values) {
 
   for (double position = start_pos; position < xmax; position += H)
   {
-    //avoid x<0, otherwise fn explodes and the porcess is not defined anymore. we allready know psi(x)|x<0 = 0..
+    //avoid x<0, otherwise fn explodes and the porcess outputs "nan" (recursivity). we allready know psi(x)|x<0 = 0..
     if (position-H < 0.)
     {
       position = H;
@@ -75,11 +90,13 @@ double shoot_numerov(double E, bool save_values) {
 
     if (save_values)
     {
-      save_result(position, fn);
+      save_result(position, fn, analytical_psi(position));
     }
     
+    //calculate value according to numerov process
     fn_pl_1 = (fn * (2. - (5. / 6.) * H * H * k2(position, mass, E)) - fn_min_1 * (1. + H * H / 12. * k2(position - H, mass, E))) / (1 + H*H /12. * k2(position+H, mass, E));
 
+    //shift the values
     fn_min_1 = fn;
     fn = fn_pl_1;
 
@@ -87,6 +104,7 @@ double shoot_numerov(double E, bool save_values) {
   return fn;
 }
 
+//draw the content of "result" in a .dat file
 void output_result(std::string file_name){
 
     std::string path = "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_5/Results/";
@@ -94,7 +112,7 @@ void output_result(std::string file_name){
     if(file.is_open())
     {
         std::cout<<" Output File found \n";
-        file<< "Position" << " " << "Amplitude"<<"\n" ;
+        file<< "Position" << " " << "Amplitude"<<" "<<"Analytical"<<"\n" ;
         for ( Wavefunction row : results)
         {
             file<< row.position << " "<< row.amplitude << "\n";
@@ -106,6 +124,7 @@ void output_result(std::string file_name){
     
 }
 
+//newton process to determine the 0 positions in the energie graph
 double newton(double start_x){
   double alpha_n = start_x;
   double dist = 100000.;
@@ -116,15 +135,17 @@ double newton(double start_x){
     id = find_index_at_position(alpha_n);
     //std::cout<<"ID:"<<id;
 
+  //draw a line between two points = tengent
     a = (results[id+1].amplitude - results[id].amplitude) / (H);
     b = results[id].amplitude - a*results[id].position;
 
     alpha_min_1 = alpha_n;
+    //new x is tangent = 0
     alpha_n = -b/a;
-    //std::cout<<"New point at:"<<alpha_n<<" with a:"<<a<<" b: "<<b<<"\n";
-
+    
+    //updates distance between last and new point. If too close we are done
     dist = abs( alpha_n - alpha_min_1 );
-    //std::cout<<" from "<< alpha_min_1<<" to "<<alpha_n<<" dist:"<<dist<<"\n";
+  
   }
   
   return alpha_n;
@@ -140,10 +161,13 @@ int main(int argc, char *argv[]){
     for (double i = 0; i < 20; i+=0.001)
     {
       fn = shoot_numerov(E+i, false);
-      save_result(E+i, fn);
+
+      //energiecurve doesnt need analytical value, purely simulated
+      save_result(E+i, fn, 0);
     }
 
     //searching for the *exact* nullpoints arround those E values in the curve
+    //we can find them by taking a look in the generated data from the above gen. energie curve
     double E_0 = newton(6.31);
     double E_1 = newton(7.15);
     double E_2 = newton(7.96);
@@ -152,27 +176,26 @@ int main(int argc, char *argv[]){
 
     flush_save_buffer();
 
-    std::vector<double> energies = {E_0,E_1,E_2,E_3,E_4};
+
+    //make some place in the terminal
+    std::cout<<"\n";
+    
+    //set of the eigenenergies
+    std::vector<double> energies = {E_0, E_1, E_2, E_3, E_4};
     double i = 0;
+
+    //draw wavefunction curve for each eigenenergie
     for (double E_i : energies)
     {
       std::cout<<"Generating Energie E_"<<i<<":"<<E_i<<"\n";
+
       shoot_numerov(E_i, true);
 
       output_result("Psi__E"+ std::to_string(i)+"__.dat");
+
       flush_save_buffer();
       i++;
     }
-    
-    // shoot_numerov(6.31);
-    // double position;
-    // while (true)
-    // {
-    //   std::cin>>position;
-    //   std::cout<<"at ID"<<find_index_at_position(position)<<"\n";
-    // }
-    
-   
     
     return 0;
 }
