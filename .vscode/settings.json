@@ -45,6 +45,7 @@
         "xutility": "cpp",
         "fstream": "cpp",
         "string": "cpp",
-        "array": "cpp"
+        "array": "cpp",
+        "*.idl": "cpp"
     }
 }

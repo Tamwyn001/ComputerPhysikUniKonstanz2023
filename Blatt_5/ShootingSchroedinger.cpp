@@ -3,6 +3,7 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include "C:\lib\C++\AlgLib\include\specialfunctions.h"
 
 //simulations constants
 const double HBAR = 1; //1.054571817e-34;
@@ -43,10 +44,11 @@ int find_index_at_position(double position){
 }
 
 //the analytical solution of the wave function at a given place
-double analytical_psi(double position){
+double analytical_psi(double position, double energie){
   double ai, aip, bi,bip;
   double x = pow(2*mass/(HBAR*HBAR), 1./3.);
-  //return alglib::airy(position, ai, aip, bi, bip);
+  alglib::airy(x*(position - energie), ai, aip, bi, bip);
+  return ai;
 }
 //the potential of the 1D Space
 double potential(double x) {
@@ -59,6 +61,33 @@ double potential(double x) {
 //the k^2 terme in Numerov-process
 double k2(double x, double m, double E) {
   return 2 * m / HBAR * ( E - potential(x));
+}
+
+//scaling factor for the curve to norm it
+double norm_factor(std::vector<Wavefunction>* Datas, int target)
+{
+  double summ = 0;
+  for (Wavefunction data : (*Datas))
+  {
+    switch (target)
+    {
+    case 1:
+    if (data.amplitude < 1000)
+    {
+      summ += data.amplitude;
+    }
+      break;
+    case 2:
+      summ += data.analytical;
+      break;
+
+    default:
+      break;
+    }
+    //std::cout <<summ<<" ";
+  }
+  
+  return abs(1. / summ);
 }
 
 //save some data in the results list
@@ -76,10 +105,20 @@ void flush_save_buffer()
   return;
 }
 
-double shoot_numerov(double E, bool save_values) {
+double shoot_numerov(double E, bool save_values, int id) {
   
   double fn = start_pos + H, fn_min_1 = start_pos, fn_pl_1;
-
+ 
+  double sign;
+  if (id % 2)
+  {
+    sign = -1.;
+  }
+  else
+  {
+    sign = 1.;
+  }
+  
   for (double position = start_pos; position < xmax; position += H)
   {
     //avoid x<0, otherwise fn explodes and the porcess outputs "nan" (recursivity). we allready know psi(x)|x<0 = 0..
@@ -90,7 +129,9 @@ double shoot_numerov(double E, bool save_values) {
 
     if (save_values)
     {
-      save_result(position, fn, analytical_psi(position));
+      //we save tht datas.. the -1^i is to invert the curve of odd curves to fit to the simulation.
+      // This sign change comes from the start condition but the forme of the curve is good 
+      save_result(position, fn, sign*analytical_psi(position, E));
     }
     
     //calculate value according to numerov process
@@ -99,23 +140,32 @@ double shoot_numerov(double E, bool save_values) {
     //shift the values
     fn_min_1 = fn;
     fn = fn_pl_1;
-
   }
   return fn;
 }
 
 //draw the content of "result" in a .dat file
-void output_result(std::string file_name){
+void output_result(std::string file_name, bool norm){
 
     std::string path = "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_5/Results/";
     std::ofstream file(path + file_name, std::ios::trunc);
     if(file.is_open())
     {
-        std::cout<<" Output File found \n";
+        std::cout<<" Save success\n";
         file<< "Position" << " " << "Amplitude"<<" "<<"Analytical"<<"\n" ;
+
+        double scaling_ampl = 1.;
+        double scaling_ana = 1.;
+        if(norm)
+        {
+          scaling_ampl = norm_factor(&results, 1);
+          scaling_ana = norm_factor(&results, 2);
+          file << " - " << " " << scaling_ampl <<" "<< scaling_ana <<"\n" ;
+        }
+
         for ( Wavefunction row : results)
         {
-            file<< row.position << " "<< row.amplitude << "\n";
+            file << row.position << " " << row.amplitude * scaling_ampl << " " << row.analytical*scaling_ana << "\n";
         }
         return;
     }
@@ -130,8 +180,9 @@ double newton(double start_x){
   double dist = 100000.;
   double a, b, alpha_min_1, id;
 
-   while (dist > 1e-10)
-   {
+  //!we can be more accurate than the points, so we just draw a line once
+  //  while (dist > 1e-6)
+  //  {
     id = find_index_at_position(alpha_n);
     //std::cout<<"ID:"<<id;
 
@@ -144,14 +195,13 @@ double newton(double start_x){
     alpha_n = -b/a;
     
     //updates distance between last and new point. If too close we are done
-    dist = abs( alpha_n - alpha_min_1 );
-  
-  }
+    //dist = abs( alpha_n - alpha_min_1 );
+    //std::cout<<"dist: "<<dist<< " : "<< alpha_n <<"-" << alpha_min_1<<"\n";
+  //}
   
   return alpha_n;
-   
-  
 }
+
 
 int main(int argc, char *argv[]){
 
@@ -160,38 +210,85 @@ int main(int argc, char *argv[]){
     //generate energie curve
     for (double i = 0; i < 20; i+=0.001)
     {
-      fn = shoot_numerov(E+i, false);
+      fn = shoot_numerov(E+i, false, 2);
 
       //energiecurve doesnt need analytical value, purely simulated
       save_result(E+i, fn, 0);
     }
+    output_result("ShootingTestE.dat", false);
 
     //searching for the *exact* nullpoints arround those E values in the curve
     //we can find them by taking a look in the generated data from the above gen. energie curve
-    double E_0 = newton(6.31);
-    double E_1 = newton(7.15);
-    double E_2 = newton(7.96);
-    double E_3 = newton(8.74);
-    double E_4 = newton(9.51);
+    //we interate in the energie list and search for sign change
 
+    //the newton algo need to know where to iterate, like wich startvalue
+    std::vector<double> newton_to_check;
+    fn = 0.;
+    int i = 0;
+    for(Wavefunction entry : results)
+    {
+      
+      //we reuse fn and fnm_1 to search for sign change. If we change sign: abs(a - b) > abs(a).. trust me.. ok dont trust me
+
+      //we realy check for sign change between the value and the last value
+      //trivial report
+      if(entry.amplitude == 0)
+      {
+         if (i < 5)
+        {
+        newton_to_check.push_back(entry.position);
+        i++;
+        }
+      }
+      else if(((entry.amplitude > 0) && (fn < 0 ) ) || ( (entry.amplitude < 0) && (fn > 0)) )
+      {
+        if (i < 5)
+        {
+          newton_to_check.push_back(entry.position);
+          i++;
+        } 
+      }
+      //we shift the fn to the current value and do the same with next reulst.pos
+      fn = entry.amplitude;
+
+      //stop after find 5 energies
+      if (i>5)
+      {
+        break;
+      }
+      
+    }
+    //the eigenenergies of the hamiltonian aka solutions for the wave function
+    std::vector<double> eigen_energies;
+    i = 0;
+    for(double E_start_i : newton_to_check)
+    {
+      double E_i = (newton(E_start_i));
+      eigen_energies.push_back(E_i);
+      std::cout<<"Energie "<<i<<" is: "<<E_i <<"\n";
+      i++;
+    }
+
+
+    //we then want to save the wavefunction so we delete the enerie save
     flush_save_buffer();
 
 
     //make some place in the terminal
     std::cout<<"\n";
     
-    //set of the eigenenergies
-    std::vector<double> energies = {E_0, E_1, E_2, E_3, E_4};
-    double i = 0;
 
-    //draw wavefunction curve for each eigenenergie
-    for (double E_i : energies)
+    //draw wavefunction curve for each eigenenergie with the flag i
+    i = 0;
+    for (double E_i : eigen_energies)
     {
-      std::cout<<"Generating Energie E_"<<i<<":"<<E_i<<"\n";
+      std::cout<<">Generating Energie E_"<<i<<" .. ";
 
-      shoot_numerov(E_i, true);
+      //generate the wavefunction and save it the the buffer
+      shoot_numerov(E_i, true, i);  
 
-      output_result("Psi__E"+ std::to_string(i)+"__.dat");
+      //save and flush the data for the next wavefunction
+      output_result("Psi__E"+ std::to_string(i)+"__.dat", false);
 
       flush_save_buffer();
       i++;
