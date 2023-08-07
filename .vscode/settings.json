@@ -46,6 +46,7 @@
         "fstream": "cpp",
         "string": "cpp",
         "array": "cpp",
-        "*.idl": "cpp"
+        "*.idl": "cpp",
+        "list": "cpp"
     }
 }
