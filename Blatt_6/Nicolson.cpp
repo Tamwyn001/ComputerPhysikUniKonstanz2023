@@ -6,9 +6,11 @@
 //is it possible to do matricies with the [][]?
 #include <vector>
 
+//time intervall and total simulation time
 const double delta_t = 0.001;
 const double total_time = 30.;
 
+//location boundaries and location precision
 const double start_loc = 0.;
 const double end_loc = 1.;
 const double delta_x = 0.001;
@@ -18,6 +20,7 @@ const int total_iterator_loc = 1000; //(end_loc - start_loc)/delta_x
 double D = 0.001;
 
 double alpha ;
+
 //output data
 struct Data
 {
@@ -26,14 +29,18 @@ struct Data
     double analytical;
 };
 
+//the starting concentration is a gauss peak
 double gauss_curve(double location, double peak_loc, double sigma){
     return exp(-pow((location - peak_loc), 2)/(2*sigma*sigma));
 }
+
+//the analitical solution to compare the data with
 double ana_concentration(double x, double x_0, double t, double sigma)
 {
     return (sigma/(sqrt(2*D*t + pow(sigma,2))))*exp( -pow(x-x_0,2) / (2*pow(sigma,2)) );
 }
 
+//write the given data in a .dat file 
 void output_to_file(std::string path, Data data_to_print[], int lenght)
 {
     std::ofstream file(path, std::ios::trunc);
@@ -46,6 +53,7 @@ void output_to_file(std::string path, Data data_to_print[], int lenght)
     return;
 }
 
+//the computing of the state of the system at time t=0
 void init_datas(Data values[])
 {
     for (int i = 0; i < total_iterator_loc ; i ++)
@@ -58,6 +66,7 @@ void init_datas(Data values[])
     }
 }
 
+//updates rhe coefficient of the tridiagonal matrix for the thomas algorythme
 void setup_coeffs(double coeffs_b[], double coeffs_d[], Data simulation_values[])
 {
     int i;
@@ -99,7 +108,8 @@ void simplified_thomas_algo(double coeffs_b[], double coeffs_d[], Data simulatio
         simulation_values[i].concentration = (coeffs_d[i] - 1 * simulation_values[i + 1].concentration) / coeffs_b[i];
     }
 }
-    
+
+
 void boundary_condition(Data simulation_values[], double time)
 {
     simulation_values[0].concentration = 0.;
@@ -115,7 +125,7 @@ void change_alpha()
     D += 0.00005;
 }
 
-
+//integrates under the curve to know how much matter is in the system to see if the system diverges
 double compute_stability(Data simulation_values[])
 {
     //the surface should remain the same if the volumes flats itself
@@ -127,6 +137,7 @@ double compute_stability(Data simulation_values[])
     return total_surface;
 }
 
+//calculate the  difference between the theorie and the results of Nicolson
 double compute_difference(Data simulation_values[]){
     double total_diff = 0.;
     for(int i = 0; i<total_iterator_loc; i++)
@@ -147,6 +158,7 @@ void print_sim_data_and_command(int c, double t, Data values_at_time[]){
             }
 }
 
+//generate formula for a 3D plot in GnuPlot
 void write_3D_plot(std::string path, std::vector<std::vector<Data>> matrix)
 {
     std::ofstream file(path, std::ios::trunc);
@@ -174,6 +186,7 @@ void write_3D_plot(std::string path, std::vector<std::vector<Data>> matrix)
 }
 int main(int argc, char * argv[])
 {
+    //output files
      std::string path_stability =
     "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_6/"
     "Results/Nicolson_Stability.dat";
@@ -198,22 +211,26 @@ int main(int argc, char * argv[])
 
         Data stability_simulation;
 
-        //coeffs
+        //coeffs for thomas
         double coeffs_b[total_iterator_loc];
         double coeffs_d[total_iterator_loc];
 
         alpha = D* delta_t/pow(delta_x, 2);
 
         init_datas(values_at_time);
-        //std::cout<<"plot ";
+
         //time loop
         for (double t = 0; t < total_time; t += delta_t)
         {
+            //data output
             print_sim_data_and_command(c,t, values_at_time);
+
+            //curve diffusion computing
             setup_coeffs(coeffs_b, coeffs_d, values_at_time);
             simplified_thomas_algo(coeffs_b, coeffs_d, values_at_time);
             boundary_condition(values_at_time, t);
 
+            //outputs datas at a specified timeinterval
             if (c % 1 == 0)
             {            
                 precision_simulation.location = t;

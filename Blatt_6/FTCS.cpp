@@ -6,13 +6,16 @@
 
 #define M_PI       3.14159265358979323846   // pi
 
+//time intervall and total simulation time
 double delta_t = 0.001;
 double total_time = 30.;
 
+//location boundaries and location precision
 double start_loc = 0.;
 double end_loc = 1.;
 double delta_x = 0.001;
 
+//diffusuin constant
 double D = 0.0001;
 
 //number of location iterations
@@ -24,19 +27,23 @@ struct Data
     double concentration;
     double analytical;
 };
-
+//values of the simulation at a given time t
 std::vector<Data> values_at_time;
+//same but for t+delta t
 std::vector<Data> values_next_time;
 
+//the starting concentration is a gauss peak
 double gauss_curve(double location, double peak_loc, double sigma){
     return exp(-pow((location - peak_loc), 2)/(2*sigma*sigma));
 }
 
+//the analitical solution to compare the data with
 double ana_concentration(double x, double x_0, double t, double sigma)
 {
     return (sigma/(sqrt(2*D*t + pow(sigma,2))))*exp( -pow(x-x_0,2) / (2*pow(sigma,2)) );
 }
 
+//the computing of the state of the system at time t=0
 void start_state(std::vector<Data>* values){
     for(double location = start_loc; location < end_loc; location += delta_x)
     {
@@ -49,6 +56,8 @@ void start_state(std::vector<Data>* values){
     }
 }
 
+
+//the FTCS process on a given time index
 double FTCS_at_position(int index){
 
     double phi_n_right = values_at_time[index - 1].concentration;
@@ -60,6 +69,7 @@ double FTCS_at_position(int index){
 
 }
 
+//write the given data in a .dat file by specifying if concentration and or analytical vars of Datas should be outputed
 void write_state_to_file(std::string path, std::vector<Data>& output_data, int num_collumn){
 
   std::ofstream file(path, std::ios::trunc);
@@ -81,6 +91,7 @@ void write_state_to_file(std::string path, std::vector<Data>& output_data, int n
   }
 }
 
+//generate formula for a 3D plot in GnuPlot
 void write_3D_plot(std::string path, std::vector<std::vector<Data>> matrix)
 {
     std::ofstream file(path, std::ios::trunc);
@@ -107,6 +118,7 @@ void write_3D_plot(std::string path, std::vector<std::vector<Data>> matrix)
     }
 }
 
+//outputs the state of the simulation at a given time
 void print_data_simulation(int c, double t){
     std::string path = "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_6/"
         "Results/FCTS Simulation Datas/FTCS_"+ std::to_string(t) +".dat";
@@ -117,6 +129,7 @@ void print_data_simulation(int c, double t){
     }
 }
 
+//calculate the  difference between the theorie and the results of the FTCS
 double compute_difference(std::vector<Data> simulation_values){
     double total_diff = 0.;
     for(Data it : simulation_values)
@@ -132,6 +145,7 @@ void change_alpha()
     D += 0.00005;
 }
 
+//integrates under the curve to know how much matter is in the system to see if the system diverges
 double compute_stability(std::vector<Data> values)
 {
     //the surface should remain the same if the volumes flats itself
@@ -145,6 +159,7 @@ double compute_stability(std::vector<Data> values)
 
 int main(int argc, char* argv[])
 {
+    //the outputs files
     start_state(&values_at_time);
     std::string path =
     "C:/Users/Tamwyn/Documents/Physik/ComputerPhysikUniKonstanz2023/Blatt_6/"
@@ -168,10 +183,12 @@ int main(int argc, char* argv[])
 
     int c = 1;
 
+    //for the stability we iterate over differnt alphas
     for (D = 0.0001; D < 0.001; change_alpha())
     {
         double alpha = D* delta_t/pow(delta_x, 2);
         int c = 0;
+
         //iterate over time
         for (double t = delta_t; t < total_time; t += delta_t )
         {
@@ -208,6 +225,8 @@ int main(int argc, char* argv[])
 
             values_at_time = values_next_time;
             values_next_time.clear();
+
+            //output datas for a given timeinterval, i e each second
             if (c % 1 == 0)
             {            
                 precision_simulation.location = t;
